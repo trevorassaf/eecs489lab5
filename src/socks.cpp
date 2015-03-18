@@ -75,6 +75,9 @@ socks_servinit(char *progname, struct sockaddr_in *self, char *sname)
   /* Lab 5 Task 1:
    * create a UDP socket */
   /* YOUR CODE HERE */
+  /* DONE */
+  sd = socket(PF_INET, SOCK_DGRAM, 0);
+  net_assert(sd == -1, "Failed to initialize udp socket");
   
   memset((char *) self, 0, sizeof(struct sockaddr_in));
   self->sin_family = AF_INET;

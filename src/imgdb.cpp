@@ -342,8 +342,10 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
         /* DONE */
         ihdr.ih_size = htons(segsize);
         ihdr.ih_seqn = htonl(snd_next);
-        iovec_arr[1].iov_base = (void *) (image + snd_next);
+        iovec_arr[1].iov_base = (void *) (ip + snd_next);
         iovec_arr[1].iov_len = segsize;
+
+        net_assert(sendmsg(sd, &msg, 0) == -1, "Failed to send message");
         
         fprintf(stderr, "imgdb_sendimg: sent offset 0x%x, %d bytes\n",
                 snd_next, segsize);

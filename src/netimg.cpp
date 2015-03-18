@@ -289,6 +289,8 @@ netimg_recvimg(void)
     iovec_arr[1].iov_base = (void *) (image + ntohl(hdr.ih_seqn));
     iovec_arr[1].iov_len = ntohs(hdr.ih_size);
 
+    net_assert(recvmsg(sd, &msg, 0) == -1, "Failed to recvmsg");
+
     fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes\n",
             hdr.ih_seqn, hdr.ih_size);
 
