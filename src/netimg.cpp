@@ -251,6 +251,9 @@ netimg_recvimg(void)
   net_assert(hdr.ih_vers != NETIMG_VERS, "Invalid ihdr_t version");
   net_assert(!(NETIMG_DATA & hdr.ih_type), "Invalid ihdr_t type received!");
 
+  uint16_t size = ntohs(hdr.ih_size);
+  uint32_t seqn = ntohl(hdr.ih_seqn);
+
   /* Lab5 Task 2
    *
    * Populate a struct msghdr with a pointer to a struct iovec
@@ -265,7 +268,9 @@ netimg_recvimg(void)
   iovec_arr[0].iov_base = (void *) &hdr;
   iovec_arr[0].iov_len = sizeof(hdr);
 
+
   struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
   msg.msg_iov = iovec_arr;
   msg.msg_iovlen = NETIMG_NUMIOV;
 
@@ -286,13 +291,18 @@ netimg_recvimg(void)
      */
     /* Lab5: YOUR CODE HERE */
     /* DONE */
-    iovec_arr[1].iov_base = (void *) (image + ntohl(hdr.ih_seqn));
-    iovec_arr[1].iov_len = ntohs(hdr.ih_size);
+    iovec_arr[1].iov_base = (void *) (image + seqn);
+    iovec_arr[1].iov_len = size;
 
-    net_assert(recvmsg(sd, &msg, 0) == -1, "Failed to recvmsg");
+    result = recvmsg(sd, &msg, 0);
+    if (result == -1) {
+      net_assert(errno != EAGAIN && errno != EWOULDBLOCK, strerror(errno));
+      return;
+    }
+
 
     fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes\n",
-            hdr.ih_seqn, hdr.ih_size);
+            seqn, size);
 
     /* Lab6 Task 2
      *
