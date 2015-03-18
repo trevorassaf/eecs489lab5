@@ -42,6 +42,9 @@
 #include "socks.h"
 #include "fec.h"          // Lab6
 
+#include <unistd.h>
+#include <fcntl.h>
+
 int sd;                   /* socket descriptor */
 imsg_t imsg;
 long img_size;
@@ -238,6 +241,15 @@ netimg_recvimg(void)
    * to host byte order.
    */
   /* Lab5: YOUR CODE HERE */
+  /* DONE */
+  int result = recv(sd, (void *) &hdr, sizeof(hdr), MSG_PEEK);
+  if (result == -1) {
+    net_assert(errno != EAGAIN && errno != EWOULDBLOCK, "Unknown error during netimg recv");
+    return;
+  }
+
+  net_assert(hdr.ih_vers != NETIMG_VERS, "Invalid ihdr_t version");
+  net_assert(!(NETIMG_DATA & hdr.ih_type), "Invalid ihdr_t type received!");
 
   /* Lab5 Task 2
    *
@@ -248,6 +260,14 @@ netimg_recvimg(void)
    * received.
    */
   /* Lab5: YOUR CODE HERE */
+  /* DONE */
+  struct iovec iovec_arr[NETIMG_NUMIOV];
+  iovec_arr[0].iov_base = (void *) &hdr;
+  iovec_arr[0].iov_len = sizeof(hdr);
+
+  struct msghdr msg;
+  msg.msg_iov = iovec_arr;
+  msg.msg_iovlen = NETIMG_NUMIOV;
 
   if (hdr.ih_type == NETIMG_DATA) {
     /* 
@@ -265,6 +285,9 @@ netimg_recvimg(void)
      * number in the header to host byte order again.
      */
     /* Lab5: YOUR CODE HERE */
+    /* DONE */
+    iovec_arr[1].iov_base = (void *) (image + ntohl(hdr.ih_seqn));
+    iovec_arr[1].iov_len = ntohs(hdr.ih_size);
 
     fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes\n",
             hdr.ih_seqn, hdr.ih_size);
@@ -384,6 +407,8 @@ main(int argc, char *argv[])
       
       /* Lab5 Task 2: set socket non blocking */
       /* Lab5: YOUR CODE HERE */
+      /* DONE */
+      net_assert(fcntl(sd, F_SETFL, O_NONBLOCK) == -1, "Failed to set socket to non-blocking");
 
       glutMainLoop(); /* start the GLUT main loop */
     } else if (err == NETIMG_NFOUND) {

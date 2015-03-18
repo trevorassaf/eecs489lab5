@@ -172,7 +172,17 @@ recvqry(int sd, iqry_t *iqry)
    * recvfrom() in local variable "bytes".
   */
   /* Lab5: YOUR CODE HERE */
-  
+  /* DONE */ 
+  socklen_t addr_len = sizeof(client);
+  bytes = recvfrom(
+      sd,
+      (void *) iqry,
+      sizeof(*iqry),
+      0,
+      (struct sockaddr *) &client,
+      &addr_len 
+  );
+
   if (bytes != sizeof(iqry_t)) {
     return (NETIMG_ESIZE);
   }
@@ -202,8 +212,16 @@ int imgdb::
 sendpkt(int sd, char *pkt, int size)
 {
   /* Lab5: YOUR CODE HERE */
+  /* DONE */
   // update the return value to the correct value.
-  return(0);
+  return sendto(
+      sd,
+      (void *) pkt,
+      size,
+      0,
+      (const struct sockaddr *) &client,
+      sizeof(client)
+  );
 }
 
 /*
@@ -250,6 +268,11 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
      * make sure that the send buffer is of size at least mss.
      */
     /* Lab5: YOUR CODE HERE */
+    /* DONE */
+    int sendbuff = mss;
+    socklen_t optlen = sizeof(sendbuff);
+    int result = setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sendbuff, optlen);
+    net_assert(result == -1, "imgdb::sendimg: failed to resize send buffer");
 
     /* Lab5 Task 1:
      *
@@ -260,6 +283,23 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
      * re-used for each chunk of data to be sent.
      */
     /* Lab5: YOUR CODE HERE */
+    /* DONE */
+    ihdr_t ihdr;
+    ihdr.ih_vers = NETIMG_VERS;
+    ihdr.ih_type = NETIMG_DATA;
+
+    struct iovec iovec_arr[NETIMG_NUMIOV];
+    iovec_arr[0].iov_base = (void *) &ihdr;
+    iovec_arr[0].iov_len = sizeof(ihdr);
+    
+    struct msghdr msg;
+    msg.msg_name = &client;
+    msg.msg_namelen = sizeof(client);
+    msg.msg_iov = iovec_arr;
+    msg.msg_iovlen = NETIMG_NUMIOV;
+    msg.msg_control = 0;
+    msg.msg_controllen = 0;
+    msg.msg_flags = 0;
 
     do {
       /* size of this segment */
@@ -299,6 +339,11 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
          * the segment off by calling sendmsg().
          */
         /* Lab5: YOUR CODE HERE */
+        /* DONE */
+        ihdr.ih_size = htons(segsize);
+        ihdr.ih_seqn = htonl(snd_next);
+        iovec_arr[1].iov_base = (void *) (image + snd_next);
+        iovec_arr[1].iov_len = segsize;
         
         fprintf(stderr, "imgdb_sendimg: sent offset 0x%x, %d bytes\n",
                 snd_next, segsize);

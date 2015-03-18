@@ -134,6 +134,9 @@ socks_clntinit(char *sname, u_short port, int rcvbuf)
 
   /* Lab 5 Task 2: create a new UDP socket. */
   /* YOUR CODE HERE */
+  /* DONE */
+  sd = socket(PF_INET, SOCK_DGRAM, 0);
+  net_assert(sd == -1, "Failed to create udp socket");
 
   /* obtain the server's IPv4 address from sname and initialize the
      socket address with server's address and port number . */
@@ -148,6 +151,11 @@ socks_clntinit(char *sname, u_short port, int rcvbuf)
    * set socket receive buffer size to be at least rcvbuf bytes.
   */
   /* YOUR CODE HERE */
+  /* DONE */
+  net_assert(
+    setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf)) == -1,
+    "Failed to modify the receive buffer size"
+  );
 
   fprintf(stderr, "socks_clntinit: socket receive buffer set to %d bytes\n", rcvbuf);
   
